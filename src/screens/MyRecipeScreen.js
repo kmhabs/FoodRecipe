@@ -14,44 +14,99 @@ import {
     widthPercentageToDP as wp,
     heightPercentageToDP as hp,
   } from "react-native-responsive-screen";
-  
+import { useRoute } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { toggleFavorite } from "../redux/favoritesSlice";
+import Categories from "../components/categories";
+import FoodItems from "../components/recipes";
+
   export default function MyRecipeScreen() {
-    const navigation = useNavigation();
-    const [recipes, setrecipes] = useState([]);
-    const [loading, setLoading] = useState(true);
+      const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const route = useRoute();
+  const { recipe } = route.params || {}; 
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-    useEffect(() => {
-      const fetchrecipes = async () => {
-        
-        };
-  
-      fetchrecipes();
-    }, []);
-  
-    const handleAddrecipe = () => {
+  const favoriteRecipe = useSelector((state) => state.favorites.favoriterecipes);
+  const isFavourite = favoriteRecipe.some(fav => fav.title === recipe.title);
 
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const storedRecipes = await AsyncStorage.getItem("customrecipes");
+        if (storedRecipes) {
+          setRecipes(JSON.parse(storedRecipes));
+        }
+      } catch (error) {
+        console.error("Error fetching recipes", error);
+      } finally {
+        setLoading(false);
+      }
     };
-  
-    const handlerecipeClick = (recipe) => {
+    fetchRecipes();
+  }, []);
 
-    };
-    const deleterecipe = async (index) => {
-    
-    };
-  
-    const editrecipe = (recipe, index) => {
-
-    };
-  
+  if (!recipe) {
     return (
       <View style={styles.container}>
-        {/* Back Button */}
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>{"Back"}</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>No Recipe Details Available</Text>
+      </View>
+    );
+  }
+
+  const handleToggleFavorite = () => {
+    dispatch(toggleFavorite(recipe));
+  };
+
+  const handleAddRecipe = () => {
+    navigation.navigate("RecipesFormScreen");
+  };
+
+  const handleRecipeClick = (recipe) => {
+    navigation.navigate("CustomRecipesScreen", { recipe });
+  };
+
+  const deleteRecipe = async (index) => {
+    try {
+      let updatedRecipes = [...recipes];
+      updatedRecipes.splice(index, 1);
+      await AsyncStorage.setItem("customrecipes", JSON.stringify(updatedRecipes));
+      setRecipes(updatedRecipes);
+    } catch (error) {
+      console.error("Error deleting recipe", error);
+    }
+  };
+
+  const editRecipe = (recipe, index) => {
+    navigation.navigate("RecipesFormScreen", { recipeToEdit: recipe, recipeIndex: index });
+  };
   
-        <TouchableOpacity onPress={handleAddrecipe} style={styles.addButton}>
-          <Text style={styles.addButtonText}>Add New recipe</Text>
+    return (
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} testID="scrollContent">
+        <View style={styles.imageContainer} testID="imageContainer">
+          {recipe.image && <Image source={{ uri: recipe.image }} style={styles.recipeImage} />}
+        </View>
+        
+        <View style={styles.topButtonsContainer} testID="topButtonsContainer">
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text>Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleToggleFavorite} style={styles.favoriteButton}>
+            <Text>{isFavourite ? "♥" : "♡"}</Text>
+          </TouchableOpacity>
+        </View>
+  
+        <View style={styles.contentContainer} testID="contentContainer">
+          <Text style={styles.recipeTitle}>{recipe.title}</Text>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Content</Text>
+            <Text style={styles.contentText}>{recipe.description}</Text>
+          </View>
+        </View>
+  
+        <TouchableOpacity onPress={handleAddRecipe} style={styles.addButton}>
+          <Text style={styles.addButtonText}>Add New Recipe</Text>
         </TouchableOpacity>
   
         {loading ? (
@@ -59,29 +114,30 @@ import {
         ) : (
           <ScrollView contentContainerStyle={styles.scrollContainer}>
             {recipes.length === 0 ? (
-              <Text style={styles.norecipesText}>No recipes added yet.</Text>
+              <Text style={styles.noRecipesText}>No recipes added yet.</Text>
             ) : (
               recipes.map((recipe, index) => (
                 <View key={index} style={styles.recipeCard} testID="recipeCard">
-                  <TouchableOpacity testID="handlerecipeBtn" onPress={() => handlerecipeClick(recipe)}>
-                  
+                  <TouchableOpacity testID="handleRecipeBtn" onPress={() => handleRecipeClick(recipe)}>
                     <Text style={styles.recipeTitle}>{recipe.title}</Text>
                     <Text style={styles.recipeDescription} testID="recipeDescp">
-                  
+                      {recipe.description.length > 50 ? `${recipe.description.substring(0, 50)}...` : recipe.description}
                     </Text>
                   </TouchableOpacity>
-  
-                  {/* Edit and Delete Buttons */}
                   <View style={styles.actionButtonsContainer} testID="editDeleteButtons">
-                    
-                
+                    <TouchableOpacity onPress={() => editRecipe(recipe, index)} style={styles.editButton}>
+                      <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteRecipe(index)} style={styles.deleteButton}>
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))
             )}
           </ScrollView>
         )}
-      </View>
+      </ScrollView>
     );
   }
   

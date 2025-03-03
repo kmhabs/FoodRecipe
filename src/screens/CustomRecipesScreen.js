@@ -14,7 +14,11 @@ import {
   } from "react-native-responsive-screen";
   import { useDispatch, useSelector } from "react-redux";
   import { toggleFavorite } from "../redux/favoritesSlice";
-  
+  import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Categories from "../components/categories";
+import FoodItems from "../components/recipes";
+
   export default function CustomRecipesScreen() {
     const navigation = useNavigation();
     const dispatch = useDispatch();

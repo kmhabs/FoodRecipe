@@ -8,6 +8,10 @@ import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux"; // Redux hooks
 import { toggleFavorite } from "../redux/favoritesSlice"; // Redux action
 
+import { StatusBar } from "expo-status-bar";
+import Categories from "../components/categories";
+import FoodItems from "../components/recipes";
+
 export default function RecipeDetailScreen(props) {
   const recipe = props.route.params; // recipe passed from previous screen
 
@@ -19,7 +23,25 @@ export default function RecipeDetailScreen(props) {
     (favrecipe) => favrecipe.idFood === recipe.idFood
   ); // Check by idrecipe
 
-  const navigation = useNavigation();
+  const [activeCategory, setActiveCategory] = useState("Chicken");
+    const navigation = useNavigation();
+
+    const categories = [
+        { idCategory: "1", strCategory: "Beef", strCategoryThumb: "https://www.themealdb.com/images/category/beef.png" },
+        { idCategory: "2", strCategory: "Chicken", strCategoryThumb: "https://www.themealdb.com/images/category/chicken.png" },
+        { idCategory: "3", strCategory: "Dessert", strCategoryThumb: "https://www.themealdb.com/images/category/dessert.png" },
+    ];
+
+    const allFood = [
+        { category: 'Beef', idFood: '1', recipeName: "Beef and Mustard Pie", recipeImage: "https://images.unsplash.com/photo-1587248720327-8eb72564be1e?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", recipeInstructions: "Cook beef with mustard...", ingredients: [{ ingredientName: "Beef", measure: "1kg" }] },
+        { category: 'Chicken', idFood: '7', recipeName: "Chicken Curry", recipeImage: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", recipeInstructions: "Cook chicken with spices...", ingredients: [{ ingredientName: "Chicken", measure: "500g" }] },
+    ];
+
+    const handleChangeCategory = (category) => {
+        setActiveCategory(category);
+    };
+
+    const filteredfoods = allFood.filter((food) => food.category === activeCategory);
 
   const handleToggleFavorite = () => {
     dispatch(toggleFavorite(recipe)); // Dispatch the recipe to favorites
@@ -31,63 +53,38 @@ export default function RecipeDetailScreen(props) {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
     >
-      {/* recipe Image */}
-      <View style={styles.imageContainer} testID="imageContainer">
-     
-      </View>
+      <View style={styles.headerContainer} testID="headerContainer">
+                    <Image source={{ uri: 'https://cdn.pixabay.com/photo/2017/02/23/13/05/avatar-2092113_1280.png' }} style={styles.avatar} />
+                    <Text style={styles.greetingText}>Hello, User!</Text>
+                </View>
 
-      {/* Back Button and Favorite Button */}
-      <View style={styles.topButtonsContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleToggleFavorite}
-          style={[
-            styles.favoriteButton,
-            {
-              backgroundColor: "white",
-            },
-          ]}
-        >
-          <Text>{isFavourite ? "♥" : "♡"}</Text>
-        </TouchableOpacity>
-      </View>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>Make your own food,</Text>
+                    <Text style={styles.subtitle}>
+                        stay at <Text style={styles.highlight}>home</Text>
+                    </Text>
+                </View>
 
-      {/* recipe Description */}
-  
-        <View style={styles.contentContainer}>
-          {/* Title and Category */}
-          <View
-            style={styles.recipeDetailsContainer}
-            testID="recipeDetailsContainer"
-          >
-            <Text style={styles.recipeTitle} testID="recipeTitle">
-         
-              
-              </Text>
-            <Text style={styles.recipeCategory} testID="recipeCategory">
-              </Text>
-          </View>
-          <View style={styles.miscContainer} testID="miscContainer">
-        
-      </View>
+                <View testID="categoryList">
+                    <Categories categories={categories} activeCategory={activeCategory} handleChangeCategory={handleChangeCategory} />
+                </View>
 
-      {/* Ingredients */}
-      <View style={styles.sectionContainer}>
-     
-      </View>
-
-      {/* Instructions */}
-      <View style={styles.sectionContainer} testID="sectionContainer">
-        
-        </View>
-          {/* Description */}
-         
-        </View>
+                <View testID="foodList">
+                    <FlatList
+                        data={filteredfoods}
+                        keyExtractor={(item) => item.idFood}
+                        numColumns={2}
+                        renderItem={({ item, index }) => (
+                            <TouchableOpacity
+                                style={styles.cardContainer}
+                                onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+                            >
+                                <Image source={{ uri: item.recipeImage }} style={styles.articleImage} />
+                                <Text style={styles.articleText}>{item.recipeName}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
     </ScrollView>
   );
 }
